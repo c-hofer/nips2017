@@ -18,7 +18,7 @@ class PersistenceDiagramProviderCollate:
                  label_map: callable = lambda x: x,
                  output_type=torch.FloatTensor,
                  target_type=torch.LongTensor,
-                 gpu=False):
+                 nu=0.01):
         provided_views = provider.view_names
 
         if wanted_views is None:
@@ -38,26 +38,27 @@ class PersistenceDiagramProviderCollate:
 
         self.output_type = output_type
         self.target_type = target_type
-        self.gpu = gpu
+        self.log_transform = UpperDiagonalThresholdedLogTransform(nu)
 
     def __call__(self, sample_target_iter):
-        batch_views, targets = defaultdict(list), []
+        batch_views_unprepared, batch_views_prepared, targets = defaultdict(list), {}, []
 
         for dgm_dict, label in sample_target_iter:
             for view_name in self.wanted_views:
                 dgm = list(dgm_dict[view_name])
                 dgm = self.output_type(dgm)
 
-                batch_views[view_name].append(dgm)
+                batch_views_unprepared[view_name].append(dgm)
 
             targets.append(self.label_map(label))
 
+        for view_name, list_of_dgms in batch_views_unprepared.items():
+            log_transformed_list_of_dgms = [self.log_transform(dgm) for dgm in list_of_dgms]
+            batch_views_prepared[view_name] = SLayer.prepare_batch(log_transformed_list_of_dgms, point_dim=2)
+
         targets = self.target_type(targets)
 
-        if self.gpu:
-            targets = targets.cuda()
-
-        return batch_views, targets
+        return batch_views_prepared, targets
 
 
 class SubsetRandomSampler:
@@ -74,7 +75,6 @@ class SubsetRandomSampler:
 def train_test_from_dataset(dataset,
                             test_size=0.2,
                             batch_size=64,
-                            gpu=False,
                             wanted_views=None):
 
     sample_labels = list(dataset.sample_labels)
@@ -82,7 +82,7 @@ def train_test_from_dataset(dataset,
     sample_labels = label_encoder.transform(sample_labels)
 
     label_map = lambda l: int(label_encoder.transform([l])[0])
-    collate_fn = PersistenceDiagramProviderCollate(dataset, label_map=label_map, gpu=gpu, wanted_views=wanted_views)
+    collate_fn = PersistenceDiagramProviderCollate(dataset, label_map=label_map, wanted_views=wanted_views)
 
     sp = StratifiedShuffleSplit(n_splits=1, test_size=test_size)
     train_i, test_i = list(sp.split([0]*len(sample_labels), sample_labels))[0]
@@ -111,6 +111,10 @@ class UpperDiagonalThresholdedLogTransform:
     def __call__(self, dgm):
         if dgm.ndimension() == 0:
             return dgm
+
+        if dgm.is_cuda:
+            self.b_1 = self.b_1.cuda()
+            self.b_2 = self.b_2.cuda()
 
         x = torch.mul(dgm, self.b_1.repeat(dgm.size(0), 1))
         x = torch.sum(x, 1).squeeze()
@@ -169,3 +173,66 @@ def run_experiment_n_times(n, experiment, experiment_file_path):
     new_folder_name = '{}_{:.2f}_acc_on_{}'.format(exp_file_name.split('.py')[0], avg_test_acc, date)
     new_folder_name.replace('.', '_')
     os.rename(tmp_dir_path, os.path.join(os.path.dirname(tmp_dir_path), new_folder_name))
+
+
+import torch
+from torch.nn.modules import Module
+from pyPrometheus.torchex.nn.slayer import SLayer
+
+
+class SLayerPHT(Module):
+    def __init__(self,
+                 n_directions,
+                 n_elements,
+                 point_dim,
+                 n_neighbor_directions=0,
+                 center_init=None,
+                 sharpness_init=None):
+        super(SLayerPHT, self).__init__()
+
+        self.n_directions = n_directions
+        self.n_elements = n_elements
+        self.point_dim = point_dim
+        self.n_neighbor_directions = n_neighbor_directions
+
+        self.slayers = [SLayer(n_elements, point_dim, center_init, sharpness_init)
+                        for i in range(n_directions)]
+        for i, l in enumerate(self.slayers):
+            self.add_module('sl_{}'.format(i), l)
+
+    def forward(self, input):
+        assert len(input) == self.n_directions
+
+        prepared_batches = None
+        if all(SLayer.is_prepared_batch(b) for b in input):
+            prepared_batches = input
+        elif all(SLayer.is_list_of_tensors(b) for b in input):
+            is_gpu = self.is_gpu
+            prepared_batches = [SLayer.prepare_batch(input_i, self.point_dim, gpu=is_gpu) for input_i in input]
+        else:
+            raise ValueError('Unrecognized input format! Expected list of Tensors or list of SLayer.prepare_batch outputs')
+
+        batch_size = prepared_batches[0][0].size()[0]
+        assert all(prep_b[0].size()[0] == batch_size for prep_b in prepared_batches)
+
+        output = []
+        for i, sl in enumerate(self.slayers):
+            i_th_output = []
+            i_th_output.append(sl(prepared_batches[i]))
+
+            for j in range(1, self.n_neighbor_directions + 1):
+                i_th_output.append(sl(prepared_batches[i - j]))
+                i_th_output.append(sl(prepared_batches[(i + j) % self.n_directions]))
+
+            if self.n_directions > 0:
+                i_th_output = torch.stack(i_th_output, 1)
+            else:
+                i_th_output = output[0]
+
+            output.append(i_th_output)
+
+        return output
+
+    @property
+    def is_gpu(self):
+        return self.slayers[0].is_gpu
