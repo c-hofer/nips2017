@@ -35,7 +35,6 @@ class SimpleProgressCounter:
         else:
             avg = (time.time() - self._time_progress_triggered_first_time) / self.state
             estimated_remaining_time = (self.max - self.state) * avg
-            print(estimated_remaining_time)
             text += '   Remaining time: {}'.format(str(datetime.timedelta(seconds=int(estimated_remaining_time))))
 
         self.value = text
