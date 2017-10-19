@@ -170,3 +170,5 @@ def experiment(data_path):
     trainer = _create_trainer(model, params, data_train, data_test)
     print('Starting...')
     trainer.run()
+
+    return model, trainer
