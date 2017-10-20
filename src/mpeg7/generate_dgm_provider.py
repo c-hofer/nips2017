@@ -125,3 +125,5 @@ if __name__ == '__main__':
         print(output_dir, 'does not exist.')
     else:
         generate_dgm_provider(args.input_folder_path, args.output_file_path, args.number_of_directions, n_cores=args.n_cores)
+
+#TODO Thresholding

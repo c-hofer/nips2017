@@ -1,0 +1,174 @@
+import torch
+import torch.nn as nn
+
+from torch import optim
+
+from ..sharedCode.provider import Provider
+from ..sharedCode.experiments import train_test_from_dataset, \
+    UpperDiagonalThresholdedLogTransform, \
+    pers_dgm_center_init,\
+    SLayerPHT
+
+import chofer_torchex.utils.trainer as tr
+from chofer_torchex.utils.trainer.plugins import *
+
+
+def _parameters():
+    return \
+    {
+        'data_path': None,
+        'epochs': 500,
+        'momentum': 0.5,
+        'lr_start': 0.1,
+        'lr_ep_step': 25,
+        'lr_adaption': 0.5,
+        'test_ratio': 0.1,
+        'batch_size': 128,
+        'cuda': False
+    }
+
+
+def _data_setup(params):
+    subscripted_views = ['DegreeVertexFiltration_dim_0',
+                         'DegreeVertexFiltration_dim_0_essential',
+                         'DegreeVertexFiltration_dim_1_essential'
+                         ]
+
+    print('Loading provider...')
+    dataset = Provider()
+    dataset.read_from_h5(params['data_path'])
+
+    assert all(view_name in dataset.view_names for view_name in subscripted_views)
+
+    print('Create data loader...')
+    data_train, data_test = train_test_from_dataset(dataset,
+                                                    test_size=params['test_ratio'],
+                                                    batch_size=params['batch_size'])
+
+    return data_train, data_test, subscripted_views
+
+
+
+class MyModel(torch.nn.Module):
+    def __init__(self, subscripted_views):
+        super(MyModel, self).__init__()
+
+        self.subscripted_views = subscripted_views
+
+        n_elements = 75
+        n_filters = 32
+        stage_2_out = 25
+        n_neighbor_directions = 1
+
+        self.transform = UpperDiagonalThresholdedLogTransform(0.01)
+
+        self.pht_sl = SLayerPHT(len(self.subscripted_views),
+                                n_elements,
+                                2,
+                                n_neighbor_directions=n_neighbor_directions,
+                                center_init=self.transform(pers_dgm_center_init(n_elements)),
+                                sharpness_init=torch.ones(n_elements, 2) * 4)
+
+        self.stage_1 = []
+        for i in range(len(self.subscripted_views)):
+            seq = nn.Sequential()
+            seq.add_module('conv_1', nn.Conv1d(1 + 2 * n_neighbor_directions, n_filters, 1, bias=False))
+            seq.add_module('conv_2', nn.Conv1d(n_filters, 8, 1, bias=False))
+            self.stage_1.append(seq)
+            self.add_module('stage_1_{}'.format(i), seq)
+
+        self.stage_2 = []
+        for i in range(len(self.subscripted_views)):
+            seq = nn.Sequential()
+            seq.add_module('linear_1', nn.Linear(n_elements, stage_2_out))
+            seq.add_module('batch_norm', nn.BatchNorm1d(stage_2_out))
+            seq.add_module('linear_2'
+                           , nn.Linear(stage_2_out, stage_2_out))
+            seq.add_module('relu', nn.ReLU())
+            seq.add_module('Dropout', nn.Dropout(0.4))
+
+            self.stage_2.append(seq)
+            self.add_module('stage_2_{}'.format(i), seq)
+
+        linear_1 = nn.Sequential()
+        linear_1.add_module('linear', nn.Linear(len(self.subscripted_views) * stage_2_out, 50))
+        linear_1.add_module('batchnorm', torch.nn.BatchNorm1d(50))
+        linear_1.add_module('drop_out', torch.nn.Dropout(0.3))
+        self.linear_1 = linear_1
+
+        linear_2 = nn.Sequential()
+        linear_2.add_module('linear', nn.Linear(50, 20))
+
+        self.linear_2 = linear_2
+
+    def forward(self, batch):
+        x = [batch[n] for n in self.subscripted_views]
+
+        x = self.pht_sl(x)
+
+        x = [l(xx) for l, xx in zip(self.stage_1, x)]
+
+        x = [torch.squeeze(torch.max(xx, 1)[0]) for xx in x]
+
+        x = [l(xx) for l, xx in zip(self.stage_2, x)]
+
+        x = torch.cat(x, 1)
+        x = self.linear_1(x)
+        x = self.linear_2(x)
+        return x
+
+
+def _create_trainer(model, params, data_train, data_test):
+    optimizer = optim.SGD(model.parameters(),
+                          lr=params['lr_start'],
+                          momentum=params['momentum'])
+
+    loss = nn.CrossEntropyLoss()
+
+    trainer = tr.Trainer(model=model,
+                         optimizer=optimizer,
+                         loss=loss,
+                         train_data=data_train,
+                         n_epochs=params['epochs'],
+                         cuda=params['cuda'],
+                         variable_created_by_model=True)
+
+    def determine_lr(self, **kwargs):
+        epoch = kwargs['epoch_count']
+        if epoch % params['lr_ep_step'] == 0:
+            return params['lr_start'] / 2 ** (epoch / params['lr_ep_step'])
+
+    lr_scheduler = LearningRateScheduler(determine_lr, verbose=True)
+    lr_scheduler.register(trainer)
+
+    progress = ConsoleBatchProgress()
+    progress.register(trainer)
+
+    prediction_monitor_test = PredictionMonitor(data_test,
+                                                verbose=True,
+                                                eval_every_n_epochs=1,
+                                                variable_created_by_model=True)
+    prediction_monitor_test.register(trainer)
+
+    return trainer
+
+
+def experiment(data_path):
+    params = _parameters()
+    params['data_path'] = data_path
+
+    if torch.cuda.is_available():
+        params['cuda'] = True
+
+    print('Data setup...')
+    data_train, data_test, subscripted_views = _data_setup(params)
+
+    print('Create model...')
+    model = MyModel(subscripted_views)
+
+    print('Setup trainer...')
+    trainer = _create_trainer(model, params, data_train, data_test)
+    print('Starting...')
+    trainer.run()
+
+    return model, trainer
