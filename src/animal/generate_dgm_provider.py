@@ -69,23 +69,23 @@ def generate_dgm_provider(data_path, output_file_path, number_of_directions, n_c
     if n_cores == -1:
         n_cores == int(multiprocessing.cpu_count()*0.5)
 
-    pool = multiprocessing.Pool(n_cores)
+    with multiprocessing.Pool(n_cores) as pool:
 
-    errors = []
-    for result in pool.imap(job, job_args):
-        try:
-            label = result['label']
-            sample_id = result['sample_id']
+        errors = []
+        for result in pool.imap(job, job_args):
+            try:
+                label = result['label']
+                sample_id = result['sample_id']
 
-            if 'error' in result:
-                errors.append((sample_id, result['error']))
-            else:
-                for view_id, dgm in result['dgms'].items():
-                    views[view_id][label][sample_id] = dgm
-            progress.trigger_progress()
+                if 'error' in result:
+                    errors.append((sample_id, result['error']))
+                else:
+                    for view_id, dgm in result['dgms'].items():
+                        views[view_id][label][sample_id] = dgm
+                progress.trigger_progress()
 
-        except Exception as ex:
-            errors.append(ex)
+            except Exception as ex:
+                errors.append(ex)
 
     prv = Provider()
     for key, view_data in views.items():
