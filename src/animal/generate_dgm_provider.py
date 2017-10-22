@@ -67,7 +67,7 @@ def generate_dgm_provider(data_path, output_file_path, number_of_directions, n_c
             job_args.append(args)
 
     if n_cores == -1:
-        n_cores == int(multiprocessing.cpu_count()*0.75)
+        n_cores == int(multiprocessing.cpu_count()*0.5)
 
     pool = multiprocessing.Pool(n_cores)
 
