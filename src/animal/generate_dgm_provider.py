@@ -46,8 +46,8 @@ def generate_dgm_provider(data_path, output_file_path, number_of_directions, n_c
     class_folders = src_folder.folders()
 
     n = sum([len(cf.files(name_pred=lambda n: n != 'Thumbs.db')) for cf in class_folders])
-    progress = SimpleProgressCounter(n)
-    progress.display()
+    # progress = SimpleProgressCounter(n)
+    # progress.display()
 
     views = {}
     for i in range(1, number_of_directions + 1):
@@ -69,10 +69,12 @@ def generate_dgm_provider(data_path, output_file_path, number_of_directions, n_c
     if n_cores == -1:
         n_cores = int(multiprocessing.cpu_count()*0.5)
 
+    print('Starting {} jobs...'.format(len(job_args)))
+
     with multiprocessing.Pool(n_cores) as pool:
 
         errors = []
-        for result in pool.imap(job, job_args):
+        for i, result in enumerate(pool.imap_unordered(job, job_args)):
             try:
                 label = result['label']
                 sample_id = result['sample_id']
@@ -82,7 +84,8 @@ def generate_dgm_provider(data_path, output_file_path, number_of_directions, n_c
                 else:
                     for view_id, dgm in result['dgms'].items():
                         views[view_id][label][sample_id] = dgm
-                progress.trigger_progress()
+                # progress.trigger_progress()
+                print('{}/{}   {}'.format(i, len(job_args), sample_id))
 
             except Exception as ex:
                 errors.append(ex)
