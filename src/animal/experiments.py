@@ -31,7 +31,7 @@ def _parameters():
 
 def _data_setup(params):
     view_name_template = 'dim_0_dir_{}'
-    subscripted_views = sorted([view_name_template.format(i) for i in range(1, 32 + 1)])
+    subscripted_views = sorted([view_name_template.format(i) for i in range(32)])
     assert (str(len(subscripted_views)) in params['data_path'])
 
     print('Loading provider...')

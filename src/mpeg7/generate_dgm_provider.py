@@ -1,33 +1,16 @@
 import scipy.misc
 import scipy.ndimage
-import numpy as np
-import skimage.morphology
 import multiprocessing
 
 from collections import defaultdict
-
-from pershombox import calculate_discrete_NPHT_2d
 from ..sharedCode.fileSys import Folder
 from ..sharedCode.gui import SimpleProgressCounter
 from ..sharedCode.provider import Provider
+from ..sharedCode.generate_dgm_provider_shapes import *
 
 
-def reduce_to_largest_connected_component(img):
-    label_map, n = skimage.morphology.label(img, neighbors=4, background=0, return_num=True)
-    volumes = []
-    for i in range(n):
-        volumes.append(np.count_nonzero(label_map == (i + 1)))
-
-    arg_max = np.argmax(volumes)
-    img = (label_map == (arg_max + 1))
-
-    return img
-
-
-def get_npht(img, number_of_directions):
-    img = np.ndarray.astype(img, bool)
-    npht = calculate_discrete_NPHT_2d(img, number_of_directions)
-    return npht
+def threhold_dgm(dgm):
+    return list(p for p in dgm if p[1]-p[0] > DGM_MIN_PERSISTENCE_THRESHOLD)
 
 
 def job(args):
@@ -45,6 +28,9 @@ def job(args):
     dgms_dim_0 = [x[0] for x in npht]
     dgms_dim_1 = [x[1] for x in npht]
 
+    dgms_dim_0 = [threhold_dgm(dgm) for dgm in dgms_dim_0]
+    dgms_dim_1 = [threhold_dgm(dgm) for dgm in dgms_dim_1]
+
     views = return_value['views']
 
     for i, dgm in enumerate(dgms_dim_0):
@@ -56,7 +42,7 @@ def job(args):
     return return_value
 
 
-def generate_dgm_provider(data_path, output_path, number_of_directions, n_cores=4):
+def generate_dgm_provider(data_path, output_path, number_of_directions, n_cores=-1):
     src_folder = Folder(data_path)
     files = src_folder.files(name_pred=lambda n: n.endswith('.gif'))
 
@@ -75,6 +61,9 @@ def generate_dgm_provider(data_path, output_path, number_of_directions, n_cores=
         args['number_of_directions'] = number_of_directions
 
         job_args.append(args)
+
+    if n_cores == -1:
+        n_cores == int(multiprocessing.cpu_count()*0.9)
 
     pool = multiprocessing.Pool(n_cores)
 
@@ -108,22 +97,21 @@ def generate_dgm_provider(data_path, output_path, number_of_directions, n_cores=
         print(errors)
 
 
-if __name__ == '__main__':
-    from argparse import ArgumentParser
-    import os.path
-
-    parser = ArgumentParser()
-    parser.add_argument('input_folder_path', type=str)
-    parser.add_argument('output_file_path', type=str)
-    parser.add_argument('number_of_directions', type=int)
-    parser.add_argument('--n_cores', type=int, default=4)
-
-    args = parser.parse_args()
-
-    output_dir = os.path.dirname(args.output_file_path)
-    if not os.path.exists(output_dir):
-        print(output_dir, 'does not exist.')
-    else:
-        generate_dgm_provider(args.input_folder_path, args.output_file_path, args.number_of_directions, n_cores=args.n_cores)
-
-#TODO Thresholding
+#TODO beautify
+# if __name__ == '__main__':
+#     from argparse import ArgumentParser
+#     import os.path
+#
+#     parser = ArgumentParser()
+#     parser.add_argument('input_folder_path', type=str)
+#     parser.add_argument('output_file_path', type=str)
+#     parser.add_argument('number_of_directions', type=int)
+#     parser.add_argument('--n_cores', type=int, default=4)
+#
+#     args = parser.parse_args()
+#
+#     output_dir = os.path.dirname(args.output_file_path)
+#     if not os.path.exists(output_dir):
+#         print(output_dir, 'does not exist.')
+#     else:
+#         generate_dgm_provider(args.input_folder_path, args.output_file_path, args.number_of_directions, n_cores=args.n_cores)

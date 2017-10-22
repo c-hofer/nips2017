@@ -1,33 +1,12 @@
 import multiprocessing
-
-import numpy as np
 import scipy.misc
 import scipy.ndimage
-import skimage.morphology
-from pershombox import calculate_discrete_NPHT_2d
 
 from src.sharedCode.fileSys import Folder
 from src.sharedCode.gui import SimpleProgressCounter
 from src.sharedCode.provider import Provider
 
-
-def preprocess_img(img):
-    label_map, n = skimage.morphology.label(img, neighbors=4, background=0, return_num=True)
-    volumes = []
-    for i in range(n):
-        volumes.append(np.count_nonzero(label_map == (i + 1)))
-
-    arg_max = np.argmax(volumes)
-    img = (label_map == (arg_max + 1))
-
-    return img
-
-
-def get_npht(img, number_of_directions):
-    img = np.ndarray.astype(img, bool)
-
-    npht = calculate_discrete_NPHT_2d(img, number_of_directions)
-    return npht
+from ..sharedCode.generate_dgm_provider_shapes import *
 
 
 def job(args):
@@ -38,7 +17,7 @@ def job(args):
     return_value = {'label': label, 'sample_id': sample_id, 'dgms': {}}
 
     img = scipy.misc.imread(sample_file_path, flatten=True)
-    img = preprocess_img(img)
+    img = reduce_to_largest_connected_component(img)
     try:
         npht = get_npht(img, number_of_directions)
 
@@ -48,7 +27,10 @@ def job(args):
         dgms_dim_0 = [x[0] for x in npht]
         dgms_dim_1 = [x[1] for x in npht]
 
-        for dir_i, dgm_0, dgm_1 in zip(range(1, number_of_directions + 1), dgms_dim_0, dgms_dim_1):
+        dgms_dim_0 = [threhold_dgm(dgm) for dgm in dgms_dim_0]
+        dgms_dim_1 = [threhold_dgm(dgm) for dgm in dgms_dim_1]
+
+        for dir_i, dgm_0, dgm_1 in zip(range(number_of_directions), dgms_dim_0, dgms_dim_1):
             if len(dgm_0) == 0:
                 return_value['error'] = 'Degenerate diagram detected.'
                 break
@@ -59,7 +41,7 @@ def job(args):
     return return_value
 
 
-def generate_dgm_provider(data_path, output_file_path, number_of_directions, n_cores=4):
+def generate_dgm_provider(data_path, output_file_path, number_of_directions, n_cores=-1):
     src_folder = Folder(data_path)
     class_folders = src_folder.folders()
 
@@ -83,6 +65,9 @@ def generate_dgm_provider(data_path, output_file_path, number_of_directions, n_c
                     'sample_id': sample_file.name,
                     'number_of_directions': number_of_directions}
             job_args.append(args)
+
+    if n_cores == -1:
+        n_cores == int(multiprocessing.cpu_count()*0.9)
 
     pool = multiprocessing.Pool(n_cores)
 
@@ -114,23 +99,21 @@ def generate_dgm_provider(data_path, output_file_path, number_of_directions, n_c
     if len(errors) > 0:
         print(errors)
 
-
-if __name__ == '__main__':
-    from argparse import ArgumentParser
-    import os.path
-
-    parser = ArgumentParser()
-    parser.add_argument('input_folder_path', type=str)
-    parser.add_argument('output_file_path', type=str)
-    parser.add_argument('number_of_directions', type=int)
-    parser.add_argument('--n_cores', type=int, default=4)
-
-    args = parser.parse_args()
-
-    output_dir = os.path.dirname(args.output_file_path)
-    if not os.path.exists(output_dir):
-        print(output_dir, 'does not exist.')
-    else:
-        generate_dgm_provider(args.input_folder_path, args.output_file_path, args.number_of_directions, n_cores=args.n_cores)
-
-    #TODO thresholding
+#TODO beautify
+# if __name__ == '__main__':
+#     from argparse import ArgumentParser
+#     import os.path
+#
+#     parser = ArgumentParser()
+#     parser.add_argument('input_folder_path', type=str)
+#     parser.add_argument('output_file_path', type=str)
+#     parser.add_argument('number_of_directions', type=int)
+#     parser.add_argument('--n_cores', type=int, default=4)
+#
+#     args = parser.parse_args()
+#
+#     output_dir = os.path.dirname(args.output_file_path)
+#     if not os.path.exists(output_dir):
+#         print(output_dir, 'does not exist.')
+#     else:
+#         generate_dgm_provider(args.input_folder_path, args.output_file_path, args.number_of_directions, n_cores=args.n_cores)
