@@ -1,6 +1,7 @@
 import multiprocessing
 import scipy.misc
 import scipy.ndimage
+import os
 
 from src.sharedCode.fileSys import Folder
 from src.sharedCode.gui import SimpleProgressCounter
@@ -42,6 +43,10 @@ def job(args):
 
 
 def generate_dgm_provider(data_path, output_file_path, number_of_directions, n_cores=-1):
+    if not os.path.exists(os.path.dirname(output_file_path)):
+        print(os.path.dirname(output_file_path), 'does not exist.')
+
+
     src_folder = Folder(data_path)
     class_folders = src_folder.folders()
 
