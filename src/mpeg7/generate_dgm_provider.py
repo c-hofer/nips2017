@@ -60,7 +60,7 @@ def generate_dgm_provider(data_path, output_path, number_of_directions, n_cores=
         job_args.append(args)
 
     if n_cores == -1:
-        n_cores == int(multiprocessing.cpu_count()*0.5)
+        n_cores = int(multiprocessing.cpu_count()*0.5)
 
     views = defaultdict(lambda: defaultdict(dict))
     errors = []
