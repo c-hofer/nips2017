@@ -6,11 +6,8 @@ from collections import defaultdict
 from ..sharedCode.fileSys import Folder
 from ..sharedCode.gui import SimpleProgressCounter
 from ..sharedCode.provider import Provider
+
 from ..sharedCode.generate_dgm_provider_shapes import *
-
-
-def threhold_dgm(dgm):
-    return list(p for p in dgm if p[1]-p[0] > DGM_MIN_PERSISTENCE_THRESHOLD)
 
 
 def job(args):
