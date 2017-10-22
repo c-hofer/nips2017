@@ -1,8 +1,6 @@
 if __name__ == '__main__':
     import os
 
-    from multiprocessing import cpu_count
-
     from src.animal.generate_dgm_provider import generate_dgm_provider
     from src.animal.experiments import experiment
 
@@ -11,11 +9,9 @@ if __name__ == '__main__':
 
     if not os.path.isfile(provider_path):
         print('Persistence diagram provider does not exists, creating ... (this may need some time)')
-        n_cores = max(1, cpu_count() - 1)
         generate_dgm_provider(raw_data_path,
                               provider_path,
-                              32,
-                              n_cores=n_cores)
+                              32)
     else:
         print('Found persistence diagram provider!')
 
