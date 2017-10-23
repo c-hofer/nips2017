@@ -1,4 +1,3 @@
-import os
 import torch
 import torch.nn as nn
 
@@ -159,8 +158,8 @@ def experiment(data_path):
     params = _parameters()
     params['data_path'] = data_path
 
-    # if torch.cuda.is_available():
-    #     params['cuda'] = True
+    if torch.cuda.is_available():
+        params['cuda'] = True
 
     print('Data setup...')
     data_train, data_test, subscripted_views = _data_setup(params)
