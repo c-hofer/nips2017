@@ -101,10 +101,10 @@ def _model(subscripted_views):
             self.linear_2 = linear_2
 
         def forward(self, batch):
-            batch = [batch[n] for n in subscripted_views]
-            x = [[self.transform(dgm) for dgm in view_batch] for view_batch in batch]
+            x = [batch[n] for n in subscripted_views]
+            x = [[self.transform(dgm) for dgm in view_batch] for view_batch in x]
 
-            x = self.pht_sl(batch)
+            x = self.pht_sl(x)
 
             x = [l(xx) for l, xx in zip(self.stage_1, x)]
 
