@@ -9,6 +9,7 @@ from ..sharedCode.experiments import train_test_from_dataset, \
     pers_dgm_center_init,\
     SLayerPHT
 
+
 import chofer_torchex.utils.trainer as tr
 from chofer_torchex.utils.trainer.plugins import *
 
@@ -30,7 +31,7 @@ def _parameters():
 
 def _data_setup(params):
     view_name_template = 'dim_0_dir_{}'
-    subscripted_views = sorted([view_name_template.format(i) for i in range(32)])
+    subscripted_views = sorted([view_name_template.format(i) for i in range(0, 32)])
     assert (str(len(subscripted_views)) in params['data_path'])
 
     print('Loading provider...')
@@ -53,7 +54,7 @@ def _model(subscripted_views):
             super(MyModel, self).__init__()
 
             n_elements = 75
-            n_filters = 32
+            n_filters = 16
             stage_2_out = 25
             n_neighbor_directions = 1
 
@@ -70,7 +71,7 @@ def _model(subscripted_views):
             for i in range(len(subscripted_views)):
                 seq = nn.Sequential()
                 seq.add_module('conv_1', nn.Conv1d(1 + 2 * n_neighbor_directions, n_filters, 1, bias=False))
-                seq.add_module('conv_2', nn.Conv1d(n_filters, 8, 1, bias=False))
+                seq.add_module('conv_2', nn.Conv1d(n_filters, 4, 1, bias=False))
                 self.stage_1.append(seq)
                 self.add_module('stage_1_{}'.format(i), seq)
 
@@ -88,13 +89,13 @@ def _model(subscripted_views):
                 self.add_module('stage_2_{}'.format(i), seq)
 
             linear_1 = nn.Sequential()
-            linear_1.add_module('linear', nn.Linear(len(subscripted_views) * stage_2_out, 50))
-            linear_1.add_module('batchnorm', torch.nn.BatchNorm1d(50))
+            linear_1.add_module('linear', nn.Linear(len(subscripted_views) * stage_2_out, 100))
+            linear_1.add_module('batchnorm', torch.nn.BatchNorm1d(100))
             linear_1.add_module('drop_out', torch.nn.Dropout(0.3))
             self.linear_1 = linear_1
 
             linear_2 = nn.Sequential()
-            linear_2.add_module('linear', nn.Linear(50, 20))
+            linear_2.add_module('linear', nn.Linear(100, 70))
 
             self.linear_2 = linear_2
 
