@@ -11,6 +11,9 @@ from ..sharedCode.generate_dgm_provider_shapes import *
 
 
 def job(args):
+    import warnings
+    warnings.filterwarnings('error')
+
     sample_file_path = args['file_path']
     label = args['label']
     sample_id = args['sample_id']
@@ -46,13 +49,12 @@ def generate_dgm_provider(data_path, output_file_path, number_of_directions, n_c
     if not os.path.exists(os.path.dirname(output_file_path)):
         print(os.path.dirname(output_file_path), 'does not exist.')
 
-
     src_folder = Folder(data_path)
     class_folders = src_folder.folders()
 
     n = sum([len(cf.files(name_pred=lambda n: n != 'Thumbs.db')) for cf in class_folders])
-    # progress = SimpleProgressCounter(n)
-    # progress.display()
+    progress = SimpleProgressCounter(n)
+    progress.display()
 
     views = {}
     for i in range(0, number_of_directions):
@@ -74,26 +76,20 @@ def generate_dgm_provider(data_path, output_file_path, number_of_directions, n_c
     if n_cores == -1:
         n_cores = int(multiprocessing.cpu_count()*0.5)
 
-    print('Starting {} jobs...'.format(len(job_args)))
-
     with multiprocessing.Pool(n_cores) as pool:
 
         errors = []
         for i, result in enumerate(pool.imap_unordered(job, job_args)):
-            try:
-                label = result['label']
-                sample_id = result['sample_id']
+            label = result['label']
+            sample_id = result['sample_id']
 
-                if 'error' in result:
-                    errors.append((sample_id, result['error']))
-                else:
-                    for view_id, dgm in result['dgms'].items():
-                        views[view_id][label][sample_id] = dgm
-                # progress.trigger_progress()
-                print('{}/{}   {}'.format(i, len(job_args), sample_id))
+            if 'error' in result:
+                errors.append((sample_id, result['error']))
+            else:
+                for view_id, dgm in result['dgms'].items():
+                    views[view_id][label][sample_id] = dgm
 
-            except Exception as ex:
-                errors.append(ex)
+            progress.trigger_progress()
 
     prv = Provider()
     for key, view_data in views.items():
@@ -105,7 +101,11 @@ def generate_dgm_provider(data_path, output_file_path, number_of_directions, n_c
     prv.dump_as_h5(output_file_path)
 
     if len(errors) > 0:
-        print(errors)
+        with open('animal_dgm_creation_errors.txt', 'w') as f:
+            for k, v in errors:
+                f.write(k)
+                f.write(v)
+
 
 #TODO beautify
 # if __name__ == '__main__':
