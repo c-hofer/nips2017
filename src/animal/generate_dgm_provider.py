@@ -91,6 +91,7 @@ def generate_dgm_provider(data_path, output_file_path, number_of_directions, n_c
 
             progress.trigger_progress()
 
+    print('Finished calculation ... writing provider (this may also take some time ;) )')
     prv = Provider()
     for key, view_data in views.items():
         prv.add_view(key, view_data)
@@ -104,7 +105,7 @@ def generate_dgm_provider(data_path, output_file_path, number_of_directions, n_c
         with open('animal_dgm_creation_errors.txt', 'w') as f:
             for k, v in errors:
                 f.write(k)
-                f.write(v)
+                f.write(str(v))
 
 
 #TODO beautify
