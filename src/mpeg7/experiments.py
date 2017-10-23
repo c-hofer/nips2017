@@ -47,7 +47,7 @@ def _data_setup(params):
 
     return data_train, data_test, subscripted_views
 
-
+#todo get class out of function
 def _model(subscripted_views):
     class MyModel(torch.nn.Module):
         def __init__(self):
