@@ -10,6 +10,7 @@ from ..sharedCode.experiments import train_test_from_dataset, \
     pers_dgm_center_init,\
     SLayerPHT
 
+
 import chofer_torchex.utils.trainer as tr
 from chofer_torchex.utils.trainer.plugins import *
 
@@ -101,6 +102,7 @@ def _model(subscripted_views):
 
         def forward(self, batch):
             batch = [batch[n] for n in subscripted_views]
+            x = [[self.transform(dgm) for dgm in view_batch] for view_batch in batch]
 
             x = self.pht_sl(batch)
 
@@ -157,8 +159,8 @@ def experiment(data_path):
     params = _parameters()
     params['data_path'] = data_path
 
-    if torch.cuda.is_available():
-        params['cuda'] = True
+    # if torch.cuda.is_available():
+    #     params['cuda'] = True
 
     print('Data setup...')
     data_train, data_test, subscripted_views = _data_setup(params)

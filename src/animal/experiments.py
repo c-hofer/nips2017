@@ -101,6 +101,7 @@ def _model(subscripted_views):
 
         def forward(self, batch):
             x = [batch[n] for n in subscripted_views]
+            x = [[self.transform(dgm) for dgm in view_batch] for view_batch in batch]
 
             x = self.pht_sl(x)
 

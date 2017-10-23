@@ -11,6 +11,8 @@ from torch.utils.data import DataLoader
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.preprocessing.label import LabelEncoder
 from collections import defaultdict
+from torch.nn import Module
+from chofer_torchex.nn import SLayer
 
 
 class PersistenceDiagramProviderCollate:
@@ -38,7 +40,7 @@ class PersistenceDiagramProviderCollate:
 
         self.output_type = output_type
         self.target_type = target_type
-        self.log_transform = UpperDiagonalThresholdedLogTransform(nu)
+        # self.log_transform = UpperDiagonalThresholdedLogTransform(nu)
 
     def __call__(self, sample_target_iter):
         batch_views_unprepared, batch_views_prepared, targets = defaultdict(list), {}, []
@@ -52,13 +54,13 @@ class PersistenceDiagramProviderCollate:
 
             targets.append(self.label_map(label))
 
-        for view_name, list_of_dgms in batch_views_unprepared.items():
-            log_transformed_list_of_dgms = [self.log_transform(dgm) for dgm in list_of_dgms]
-            batch_views_prepared[view_name] = SLayer.prepare_batch(log_transformed_list_of_dgms, point_dim=2)
+        # for view_name, list_of_dgms in batch_views_unprepared.items():
+        #     log_transformed_list_of_dgms = [self.log_transform(dgm) for dgm in list_of_dgms]
+        #     batch_views_prepared[view_name] = SLayer.prepare_batch(log_transformed_list_of_dgms, point_dim=2)
 
         targets = self.target_type(targets)
 
-        return batch_views_prepared, targets
+        return batch_views_unprepared, targets
 
 
 class SubsetRandomSampler:
@@ -175,11 +177,6 @@ def run_experiment_n_times(n, experiment, experiment_file_path):
     os.rename(tmp_dir_path, os.path.join(os.path.dirname(tmp_dir_path), new_folder_name))
 
 
-import torch
-from torch.nn.modules import Module
-from pyPrometheus.torchex.nn.slayer import SLayer
-
-
 class SLayerPHT(Module):
     def __init__(self,
                  n_directions,
@@ -207,8 +204,7 @@ class SLayerPHT(Module):
         if all(SLayer.is_prepared_batch(b) for b in input):
             prepared_batches = input
         elif all(SLayer.is_list_of_tensors(b) for b in input):
-            is_gpu = self.is_gpu
-            prepared_batches = [SLayer.prepare_batch(input_i, self.point_dim, gpu=is_gpu) for input_i in input]
+            prepared_batches = [SLayer.prepare_batch(input_i, self.point_dim) for input_i in input]
         else:
             raise ValueError('Unrecognized input format! Expected list of Tensors or list of SLayer.prepare_batch outputs')
 
