@@ -6,7 +6,8 @@ from torch import optim
 from ..sharedCode.provider import Provider
 from ..sharedCode.experiments import train_test_from_dataset, \
     UpperDiagonalThresholdedLogTransform, \
-    pers_dgm_center_init
+    pers_dgm_center_init, \
+    reduce_essential_dgm
 
 from chofer_torchex.nn import SLayer
 import chofer_torchex.utils.trainer as tr
@@ -52,6 +53,7 @@ class MyModel(torch.nn.Module):
     def __init__(self, subscripted_views):
         super(MyModel, self).__init__()
         self.subscripted_views = subscripted_views
+        self.transform = UpperDiagonalThresholdedLogTransform(0.01)
 
         def get_init(n_elements):
             transform = UpperDiagonalThresholdedLogTransform(0.01)
@@ -95,8 +97,19 @@ class MyModel(torch.nn.Module):
         linear_1.add_module('batchnorm_4', nn.BatchNorm1d(5))
         self.linear_1 = linear_1
 
+    @staticmethod
+    def prepare_essential_dgm(dgm):
+        if dgm.ndim == 0:
+            return
+
     def forward(self, batch):
         x = [batch[n] for n in self.subscripted_views]
+
+        x = [
+             [self.transform(dgm) for dgm in x[0]],
+             [reduce_essential_dgm(dgm) for dgm in x[1]],
+             [reduce_essential_dgm(dgm) for dgm in x[2]]
+            ]
 
         x_sl = [l(xx) for l, xx in zip(self.slayers, x)]
 

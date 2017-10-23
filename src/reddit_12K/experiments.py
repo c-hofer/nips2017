@@ -6,7 +6,8 @@ from torch import optim
 from ..sharedCode.provider import Provider
 from ..sharedCode.experiments import train_test_from_dataset, \
     UpperDiagonalThresholdedLogTransform, \
-    pers_dgm_center_init
+    pers_dgm_center_init, \
+    reduce_essential_dgm
 
 from chofer_torchex.nn import SLayer
 import chofer_torchex.utils.trainer as tr
@@ -97,6 +98,12 @@ class MyModel(torch.nn.Module):
 
     def forward(self, batch):
         x = [batch[n] for n in self.subscripted_views]
+
+        x = [
+            [self.transform(dgm) for dgm in x[0]],
+            [reduce_essential_dgm(dgm) for dgm in x[1]],
+            [reduce_essential_dgm(dgm) for dgm in x[2]]
+        ]
 
         x_sl = [l(xx) for l, xx in zip(self.slayers, x)]
 

@@ -20,7 +20,7 @@ class PersistenceDiagramProviderCollate:
                  label_map: callable = lambda x: x,
                  output_type=torch.FloatTensor,
                  target_type=torch.LongTensor,
-                 nu=0.01):
+                 nu=0.01): #todo Remove
         provided_views = provider.view_names
 
         if wanted_views is None:
@@ -232,3 +232,11 @@ class SLayerPHT(Module):
     @property
     def is_gpu(self):
         return self.slayers[0].is_gpu
+
+
+def reduce_essential_dgm(dgm):
+
+    if dgm.ndimension() == 0:
+        return dgm
+    else:
+        return dgm[:, 0].contiguous().view(-1, 1)
