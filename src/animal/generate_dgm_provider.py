@@ -12,7 +12,7 @@ from ..sharedCode.generate_dgm_provider_shapes import *
 
 def job(args):
     import warnings
-    warnings.filterwarnings('error')
+    warnings.filterwarnings('error')#TODO change this ... those errors should not occour
 
     sample_file_path = args['file_path']
     label = args['label']
