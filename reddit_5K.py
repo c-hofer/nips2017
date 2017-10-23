@@ -1,8 +1,6 @@
 if __name__ == '__main__':
     import os
 
-    from multiprocessing import cpu_count
-
     from src.reddit_5K.generate_dgm_provider import generate_dgm_provider
     from src.reddit_5K.experiments import experiment
 

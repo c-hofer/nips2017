@@ -6,9 +6,9 @@ from torch import optim
 from ..sharedCode.provider import Provider
 from ..sharedCode.experiments import train_test_from_dataset, \
     UpperDiagonalThresholdedLogTransform, \
-    pers_dgm_center_init,\
-    SLayer
+    pers_dgm_center_init
 
+from chofer_torchex.nn import SLayer
 import chofer_torchex.utils.trainer as tr
 from chofer_torchex.utils.trainer.plugins import *
 

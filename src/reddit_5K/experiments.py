@@ -6,9 +6,9 @@ from torch import optim
 from ..sharedCode.provider import Provider
 from ..sharedCode.experiments import train_test_from_dataset, \
     UpperDiagonalThresholdedLogTransform, \
-    pers_dgm_center_init,\
-    SLayer
+    pers_dgm_center_init
 
+from chofer_torchex.nn import SLayer
 import chofer_torchex.utils.trainer as tr
 from chofer_torchex.utils.trainer.plugins import *
 
@@ -46,7 +46,6 @@ def _data_setup(params):
                                                     batch_size=params['batch_size'])
 
     return data_train, data_test, subscripted_views
-
 
 
 class MyModel(torch.nn.Module):
@@ -149,8 +148,8 @@ def experiment(data_path):
     params = _parameters()
     params['data_path'] = data_path
 
-    if torch.cuda.is_available():
-        params['cuda'] = True
+    # if torch.cuda.is_available():
+    #     params['cuda'] = True
 
     print('Data setup...')
     data_train, data_test, subscripted_views = _data_setup(params)
