@@ -18,8 +18,8 @@ def _parameters():
     {
         'data_path': None,
         'epochs': 500,
-        'momentum': 0.5,
-        'lr_start': 0.1,
+        'momentum': 0.9,
+        'lr_start': 0.4,
         'lr_ep_step': 25,
         'lr_adaption': 0.5,
         'test_ratio': 0.1,
@@ -46,7 +46,6 @@ def _data_setup(params):
                                                     batch_size=params['batch_size'])
 
     return data_train, data_test, subscripted_views
-
 
 
 class MyModel(torch.nn.Module):
@@ -92,8 +91,8 @@ class MyModel(torch.nn.Module):
         linear_1.add_module('linear_3', nn.Linear(100, 50))
         linear_1.add_module('batchnorm_3', nn.BatchNorm1d(50))
         linear_1.add_module('relu_3', nn.ReLU())
-        linear_1.add_module('linear_4', nn.Linear(50, 5))
-        linear_1.add_module('batchnorm_4', nn.BatchNorm1d(5))
+        linear_1.add_module('linear_4', nn.Linear(50, 11))
+        linear_1.add_module('batchnorm_4', nn.BatchNorm1d(11))
         self.linear_1 = linear_1
 
     def forward(self, batch):
