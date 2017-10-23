@@ -55,7 +55,7 @@ def generate_dgm_provider(data_path, output_file_path, number_of_directions, n_c
     # progress.display()
 
     views = {}
-    for i in range(1, number_of_directions + 1):
+    for i in range(0, number_of_directions):
         views['dim_0_dir_{}'.format(i)] = {}
         views['dim_1_dir_{}'.format(i)] = {}
     job_args = []
@@ -64,7 +64,7 @@ def generate_dgm_provider(data_path, output_file_path, number_of_directions, n_c
         for view in views.values():
             view[class_folder.name] = {}
 
-        for sample_file in class_folder.files(name_pred=lambda n: n != 'Thumbs.db'):
+        for sample_file in class_folder.files(name_pred=lambda name: name != 'Thumbs.db'):
             args = {'file_path': sample_file.path,
                     'label': class_folder.name,
                     'sample_id': sample_file.name,
