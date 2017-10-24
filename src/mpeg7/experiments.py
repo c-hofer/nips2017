@@ -22,7 +22,7 @@ def _parameters():
         'epochs': 300,
         'momentum': 0.7,
         'lr_start': 0.1,
-        'lr_ep_step': 20,
+        'lr_ep_step': 25,
         'lr_adaption': 0.5,
         'test_ratio': 0.1,
         'batch_size': 128,
