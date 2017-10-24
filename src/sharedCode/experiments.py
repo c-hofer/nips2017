@@ -19,8 +19,7 @@ class PersistenceDiagramProviderCollate:
     def __init__(self, provider, wanted_views: [str] = None,
                  label_map: callable = lambda x: x,
                  output_type=torch.FloatTensor,
-                 target_type=torch.LongTensor,
-                 nu=0.01): #todo Remove
+                 target_type=torch.LongTensor):
         provided_views = provider.view_names
 
         if wanted_views is None:
@@ -40,7 +39,6 @@ class PersistenceDiagramProviderCollate:
 
         self.output_type = output_type
         self.target_type = target_type
-        # self.log_transform = UpperDiagonalThresholdedLogTransform(nu)
 
     def __call__(self, sample_target_iter):
         batch_views_unprepared, batch_views_prepared, targets = defaultdict(list), {}, []
@@ -53,10 +51,6 @@ class PersistenceDiagramProviderCollate:
                 batch_views_unprepared[view_name].append(dgm)
 
             targets.append(self.label_map(label))
-
-        # for view_name, list_of_dgms in batch_views_unprepared.items():
-        #     log_transformed_list_of_dgms = [self.log_transform(dgm) for dgm in list_of_dgms]
-        #     batch_views_prepared[view_name] = SLayer.prepare_batch(log_transformed_list_of_dgms, point_dim=2)
 
         targets = self.target_type(targets)
 
@@ -206,7 +200,7 @@ class SLayerPHT(Module):
         elif all(SLayer.is_list_of_tensors(b) for b in input):
             prepared_batches = [SLayer.prepare_batch(input_i, self.point_dim) for input_i in input]
         else:
-            raise ValueError('Unrecognized input format! Expected list of Tensors or list of SLayer.prepare_batch outputs')
+            raise ValueError('Unrecognized input format! Expected list of Tensors or list of SLayer.prepare_batch outputs!')
 
         batch_size = prepared_batches[0][0].size()[0]
         assert all(prep_b[0].size()[0] == batch_size for prep_b in prepared_batches)

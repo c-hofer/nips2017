@@ -46,76 +46,75 @@ def _data_setup(params):
 
     return data_train, data_test, subscripted_views
 
-#todo get class out of function
-def _model(subscripted_views):
-    class MyModel(torch.nn.Module):
-        def __init__(self):
-            super(MyModel, self).__init__()
 
-            n_elements = 75
-            n_filters = 32
-            stage_2_out = 25
-            n_neighbor_directions = 1
 
-            self.transform = UpperDiagonalThresholdedLogTransform(0.01)
+class MyModel(torch.nn.Module):
+    def __init__(self, subscripted_views):
+        super(MyModel, self).__init__()
+        self.subscripted_views = subscripted_views
 
-            self.pht_sl = SLayerPHT(len(subscripted_views),
-                                    n_elements,
-                                    2,
-                                    n_neighbor_directions=n_neighbor_directions,
-                                    center_init=self.transform(pers_dgm_center_init(n_elements)),
-                                    sharpness_init=torch.ones(n_elements, 2) * 4)
+        n_elements = 75
+        n_filters = 32
+        stage_2_out = 25
+        n_neighbor_directions = 1
 
-            self.stage_1 = []
-            for i in range(len(subscripted_views)):
-                seq = nn.Sequential()
-                seq.add_module('conv_1', nn.Conv1d(1 + 2 * n_neighbor_directions, n_filters, 1, bias=False))
-                seq.add_module('conv_2', nn.Conv1d(n_filters, 8, 1, bias=False))
-                self.stage_1.append(seq)
-                self.add_module('stage_1_{}'.format(i), seq)
+        self.transform = UpperDiagonalThresholdedLogTransform(0.1)
 
-            self.stage_2 = []
-            for i in range(len(subscripted_views)):
-                seq = nn.Sequential()
-                seq.add_module('linear_1', nn.Linear(n_elements, stage_2_out))
-                seq.add_module('batch_norm', nn.BatchNorm1d(stage_2_out))
-                seq.add_module('linear_2'
-                               , nn.Linear(stage_2_out, stage_2_out))
-                seq.add_module('relu', nn.ReLU())
-                seq.add_module('Dropout', nn.Dropout(0.4))
+        self.pht_sl = SLayerPHT(len(subscripted_views),
+                                n_elements,
+                                2,
+                                n_neighbor_directions=n_neighbor_directions,
+                                center_init=self.transform(pers_dgm_center_init(n_elements)),
+                                sharpness_init=torch.ones(n_elements, 2) * 4)
 
-                self.stage_2.append(seq)
-                self.add_module('stage_2_{}'.format(i), seq)
+        self.stage_1 = []
+        for i in range(len(subscripted_views)):
+            seq = nn.Sequential()
+            seq.add_module('conv_1', nn.Conv1d(1 + 2 * n_neighbor_directions, n_filters, 1, bias=False))
+            seq.add_module('conv_2', nn.Conv1d(n_filters, 8, 1, bias=False))
+            self.stage_1.append(seq)
+            self.add_module('stage_1_{}'.format(i), seq)
 
-            linear_1 = nn.Sequential()
-            linear_1.add_module('linear', nn.Linear(len(subscripted_views) * stage_2_out, 50))
-            linear_1.add_module('batchnorm', torch.nn.BatchNorm1d(50))
-            linear_1.add_module('drop_out', torch.nn.Dropout(0.3))
-            self.linear_1 = linear_1
+        self.stage_2 = []
+        for i in range(len(subscripted_views)):
+            seq = nn.Sequential()
+            seq.add_module('linear_1', nn.Linear(n_elements, stage_2_out))
+            seq.add_module('batch_norm', nn.BatchNorm1d(stage_2_out))
+            seq.add_module('linear_2'
+                           , nn.Linear(stage_2_out, stage_2_out))
+            seq.add_module('relu', nn.ReLU())
+            seq.add_module('Dropout', nn.Dropout(0.4))
 
-            linear_2 = nn.Sequential()
-            linear_2.add_module('linear', nn.Linear(50, 20))
+            self.stage_2.append(seq)
+            self.add_module('stage_2_{}'.format(i), seq)
 
-            self.linear_2 = linear_2
+        linear_1 = nn.Sequential()
+        linear_1.add_module('linear', nn.Linear(len(subscripted_views) * stage_2_out, 50))
+        linear_1.add_module('batchnorm', torch.nn.BatchNorm1d(50))
+        linear_1.add_module('drop_out', torch.nn.Dropout(0.3))
+        self.linear_1 = linear_1
 
-        def forward(self, batch):
-            x = [batch[n] for n in subscripted_views]
-            x = [[self.transform(dgm) for dgm in view_batch] for view_batch in x]
+        linear_2 = nn.Sequential()
+        linear_2.add_module('linear', nn.Linear(50, 20))
 
-            x = self.pht_sl(x)
+        self.linear_2 = linear_2
 
-            x = [l(xx) for l, xx in zip(self.stage_1, x)]
+    def forward(self, batch):
+        x = [batch[n] for n in self.subscripted_views]
+        x = [[self.transform(dgm) for dgm in view_batch] for view_batch in x]
 
-            x = [torch.squeeze(torch.max(xx, 1)[0]) for xx in x]
+        x = self.pht_sl(x)
 
-            x = [l(xx) for l, xx in zip(self.stage_2, x)]
+        x = [l(xx) for l, xx in zip(self.stage_1, x)]
 
-            x = torch.cat(x, 1)
-            x = self.linear_1(x)
-            x = self.linear_2(x)
-            return x
+        x = [torch.squeeze(torch.max(xx, 1)[0]) for xx in x]
 
-    return MyModel()
+        x = [l(xx) for l, xx in zip(self.stage_2, x)]
+
+        x = torch.cat(x, 1)
+        x = self.linear_1(x)
+        x = self.linear_2(x)
+        return x
 
 
 def _create_trainer(model, params, data_train, data_test):
@@ -164,7 +163,7 @@ def experiment(data_path):
     data_train, data_test, subscripted_views = _data_setup(params)
 
     print('Create model...')
-    model = _model(subscripted_views)
+    model = MyModel(subscripted_views)
 
     print('Setup trainer...')
     trainer = _create_trainer(model, params, data_train, data_test)

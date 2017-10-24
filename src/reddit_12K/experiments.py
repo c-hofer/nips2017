@@ -20,8 +20,8 @@ def _parameters():
         'data_path': None,
         'epochs': 500,
         'momentum': 0.9,
-        'lr_start': 0.4,
-        'lr_ep_step': 25,
+        'lr_start': 0.1,
+        'lr_ep_step': 20,
         'lr_adaption': 0.5,
         'test_ratio': 0.1,
         'batch_size': 128,
@@ -53,6 +53,7 @@ class MyModel(torch.nn.Module):
     def __init__(self, subscripted_views):
         super(MyModel, self).__init__()
         self.subscripted_views = subscripted_views
+        self.transform = UpperDiagonalThresholdedLogTransform(0.01)
 
         def get_init(n_elements):
             transform = UpperDiagonalThresholdedLogTransform(0.01)

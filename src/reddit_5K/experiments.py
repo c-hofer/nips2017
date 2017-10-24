@@ -97,11 +97,6 @@ class MyModel(torch.nn.Module):
         linear_1.add_module('batchnorm_4', nn.BatchNorm1d(5))
         self.linear_1 = linear_1
 
-    @staticmethod
-    def prepare_essential_dgm(dgm):
-        if dgm.ndim == 0:
-            return
-
     def forward(self, batch):
         x = [batch[n] for n in self.subscripted_views]
 
