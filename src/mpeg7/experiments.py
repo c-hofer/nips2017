@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import numpy as np
 
 from torch import optim
 
@@ -18,10 +19,10 @@ def _parameters():
     return \
     {
         'data_path': None,
-        'epochs': 400,
+        'epochs': 300,
         'momentum': 0.7,
         'lr_start': 0.1,
-        'lr_ep_step': 25,
+        'lr_ep_step': 20,
         'lr_adaption': 0.5,
         'test_ratio': 0.1,
         'batch_size': 128,
@@ -148,6 +149,7 @@ def _create_trainer(model, params, data_train, data_test):
                                                 eval_every_n_epochs=1,
                                                 variable_created_by_model=True)
     prediction_monitor_test.register(trainer)
+    trainer.prediction_monitor = prediction_monitor_test
 
     return trainer
 
@@ -170,4 +172,7 @@ def experiment(data_path):
     print('Starting...')
     trainer.run()
 
-    return model, trainer
+    last_10_accuracies = list(trainer.prediction_monitor.accuracies.values())[-10:]
+    mean = np.mean(last_10_accuracies)
+
+    return mean

@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import numpy as np
 
 from torch import optim
 
@@ -18,10 +19,10 @@ def _parameters():
     return \
     {
         'data_path': None,
-        'epochs': 500,
+        'epochs': 400,
         'momentum': 0.5,
         'lr_start': 0.1,
-        'lr_ep_step': 25,
+        'lr_ep_step': 20,
         'lr_adaption': 0.5,
         'test_ratio': 0.1,
         'batch_size': 128,
@@ -53,10 +54,10 @@ class MyModel(torch.nn.Module):
     def __init__(self, subscripted_views):
         super(MyModel, self).__init__()
         self.subscripted_views = subscripted_views
-        self.transform = UpperDiagonalThresholdedLogTransform(0.01)
+        self.transform = UpperDiagonalThresholdedLogTransform(0.1)
 
         def get_init(n_elements):
-            transform = UpperDiagonalThresholdedLogTransform(0.01)
+            transform = UpperDiagonalThresholdedLogTransform(0.1)
             return transform(pers_dgm_center_init(n_elements))
 
         self.dim_0 = SLayer(150, 2, get_init(150), torch.ones(150, 2) * 3)
@@ -148,6 +149,7 @@ def _create_trainer(model, params, data_train, data_test):
                                                 eval_every_n_epochs=1,
                                                 variable_created_by_model=True)
     prediction_monitor_test.register(trainer)
+    trainer.prediction_monitor = prediction_monitor_test
 
     return trainer
 
@@ -170,4 +172,7 @@ def experiment(data_path):
     print('Starting...')
     trainer.run()
 
-    return model, trainer
+    last_10_accuracies = list(trainer.prediction_monitor.accuracies.values())[-10:]
+    mean = np.mean(last_10_accuracies)
+
+    return mean

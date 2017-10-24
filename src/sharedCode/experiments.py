@@ -132,45 +132,6 @@ def pers_dgm_center_init(n_elements):
     return torch.Tensor(centers)
 
 
-def run_experiment_n_times(n, experiment, experiment_file_path):
-    tmp_dir_path = os.path.join(os.getcwd(), str(time.time()))
-    os.mkdir(tmp_dir_path)
-
-    exp_file_name = os.path.basename(experiment_file_path)
-    shutil.copy(experiment_file_path, os.path.join(tmp_dir_path, exp_file_name))
-
-    date = datetime.datetime.now()
-    date = date.strftime("%Y-%m-%d %H:%M:%S").replace(' ', '_')
-
-    res_pth = os.path.join(tmp_dir_path, 'results__' + date + '.json')
-
-    result = []
-
-    for i in range(n):
-
-        print('==================^================')
-        print('Run {}'.format(i))
-        res_of_run = experiment()
-
-        # model = res_of_run['model']
-        #
-        # with open(os.path.join(tmp_dir_path, 'model_run_{}.pickle'.format(i)), 'bw') as f:
-        #     pickle.dump(model, f)
-
-        del res_of_run['model']
-
-        result.append(res_of_run)
-
-        with open(res_pth, 'w') as f:
-            json.dump(result, f)
-
-    avg_test_acc = numpy.mean([numpy.mean(r['test_accuracies'][-10:]) for r in result])
-
-    new_folder_name = '{}_{:.2f}_acc_on_{}'.format(exp_file_name.split('.py')[0], avg_test_acc, date)
-    new_folder_name.replace('.', '_')
-    os.rename(tmp_dir_path, os.path.join(os.path.dirname(tmp_dir_path), new_folder_name))
-
-
 class SLayerPHT(Module):
     def __init__(self,
                  n_directions,
