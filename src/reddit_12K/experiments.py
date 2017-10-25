@@ -15,14 +15,15 @@ import chofer_torchex.utils.trainer as tr
 from chofer_torchex.utils.trainer.plugins import *
 
 
+
 def _parameters():
     return \
     {
         'data_path': None,
-        'epochs': 400,
-        'momentum': 0.5,
-        'lr_start': 0.1,
-        'lr_ep_step': 20,
+        'epochs': 300,
+        'momentum': 0.9,
+        'lr_start': 0.4,
+        'lr_ep_step': 25,
         'lr_adaption': 0.5,
         'test_ratio': 0.1,
         'batch_size': 128,
@@ -54,11 +55,10 @@ class MyModel(torch.nn.Module):
     def __init__(self, subscripted_views):
         super(MyModel, self).__init__()
         self.subscripted_views = subscripted_views
-        self.transform = UpperDiagonalThresholdedLogTransform(0.1)
+        self.transform = UpperDiagonalThresholdedLogTransform(0.01)
 
         def get_init(n_elements):
-            transform = UpperDiagonalThresholdedLogTransform(0.1)
-            return transform(pers_dgm_center_init(n_elements))
+            return self.transform(pers_dgm_center_init(n_elements))
 
         self.dim_0 = SLayer(150, 2, get_init(150), torch.ones(150, 2) * 3)
         self.dim_0_ess = SLayer(50, 1)
