@@ -19,7 +19,7 @@ def _parameters():
     return \
     {
         'data_path': None,
-        'epochs': 400,
+        'epochs': 300,
         'momentum': 0.5,
         'lr_start': 0.1,
         'lr_ep_step': 20,
