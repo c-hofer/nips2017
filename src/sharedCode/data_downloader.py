@@ -1,7 +1,8 @@
 import tempfile
 import zipfile
-import os.path as path
 import requests
+import os
+import time
 
 from pathlib import Path
 
@@ -73,14 +74,16 @@ def download_file_from_google_drive(id, destination):
 def download_raw_data(data_set_name):
     id = _data_set_name_2_raw_data_google_drive_id[data_set_name]
 
-    output_path = path.join(str(Path(__file__).parents[2]), 'data/raw_data')
+    output_path = os.path.join(str(Path(__file__).parents[2]), 'data/raw_data')
 
+    print('Downloading ... ')
     with tempfile.TemporaryDirectory() as tmp_dir:
-        tmp_f = path.join(tmp_dir, 'download')
+        tmp_f = os.path.join(tmp_dir, 'download')
         download_file_from_google_drive(id, tmp_f)
 
         with zipfile.ZipFile(tmp_f, 'r') as zip_f:
             zip_f.extractall(output_path)
+            time.sleep(1)
 
 
 def download_provider(data_set_name):
@@ -88,9 +91,16 @@ def download_provider(data_set_name):
 
     file_name = _data_set_name_2_provider_name[data_set_name]
 
-    output_path = path.join(str(Path(__file__).parents[2]), 'data/dgm_provider/{}'.format(file_name))
+    output_path = os.path.join(str(Path(__file__).parents[2]), 'data/dgm_provider/{}'.format(file_name))
+
+    print('Downloading ... ')
+
+    ensure_path_existence(output_path)
 
     download_file_from_google_drive(id, output_path)
 
 
-
+def ensure_path_existence(the_path):
+    parent_dir = os.path.dirname(the_path)
+    if not os.path.exists(parent_dir):
+        os.mkdir(parent_dir)

@@ -39,4 +39,3 @@ class SimpleProgressCounter:
 
         self.value = text
         self.display()
-
