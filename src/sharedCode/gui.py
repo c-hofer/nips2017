@@ -39,3 +39,29 @@ class SimpleProgressCounter:
 
         self.value = text
         self.display()
+
+
+__ask_user_for_provider_or_data_set_download_txt = \
+"""
+Persistence diagram provider does not exist! 
+You have two options: 
+1) Create persistence diagram provider from raw data
+   this will take several hours and tda-toollkit has 
+   to be installed properly.
+2) Download precalculated persistence diagram provider.
+   Type 1 or 2 depending on your choice.
+"""
+
+
+def ask_user_for_provider_or_data_set_download():
+    print(__ask_user_for_provider_or_data_set_download_txt)
+    choice = input('-->')
+    while str(choice) not in ['1', '2']:
+        print("Choice has to be 1 or 2!")
+        input()
+
+    if choice == '1':
+        return 'download_provider'
+
+    if choice == '2':
+        return 'download_data_set'
