@@ -1,6 +1,14 @@
 if __name__ == '__main__':
     import os
+    import sys
     import numpy as np
+
+    #ensure chofer_torchex and pershombox are available
+    cwd = os.getcwd()
+    parent = os.path.join(cwd, os.path.join(os.path.dirname(__file__)))
+
+    sys.path.append(os.path.join(parent, 'chofer_torchex'))
+    sys.path.append(os.path.join(parent, 'tda-toolkit'))
 
     from src.animal.generate_dgm_provider import generate_dgm_provider
     from src.animal.experiments import experiment
