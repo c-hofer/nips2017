@@ -61,7 +61,7 @@ def ask_user_for_provider_or_data_set_download():
         input()
 
     if choice == '1':
-        return 'download_provider'
+        return 'download_data_set'
 
     if choice == '2':
-        return 'download_data_set'
+        return 'download_provider'
