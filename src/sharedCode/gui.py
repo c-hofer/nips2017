@@ -49,7 +49,8 @@ You have two options:
    this will take several hours and tda-toollkit has 
    to be installed properly.
 2) Download precalculated persistence diagram provider.
-   Type 1 or 2 depending on your choice.
+
+Type 1 or 2 depending on your choice.
 """
 
 
