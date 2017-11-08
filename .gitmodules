@@ -1,6 +1,6 @@
 [submodule "chofer_torchex"]
 	path = chofer_torchex
-	url = git@github.com:c-hofer/chofer_torchex.git
+	url = https://github.com/c-hofer/chofer_torchex.git
 [submodule "tda-toolkit"]
 	path = tda-toolkit
-	url = git@github.com:c-hofer/tda-toolkit.git
+	url = https://github.com/c-hofer/tda-toolkit.git
