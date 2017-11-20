@@ -2,6 +2,7 @@ if __name__ == '__main__':
     import os
     import sys
     import numpy as np
+    import time
 
     #ensure chofer_torchex and pershombox are available
     cwd = os.getcwd()
@@ -31,6 +32,7 @@ if __name__ == '__main__':
 
         elif choice == "download_provider":
             download_provider('animal')
+            time.sleep(1)  # included since sometimes downloaded file is not yet available when experiment starts.
 
     else:
         print('Found persistence diagram provider!')
