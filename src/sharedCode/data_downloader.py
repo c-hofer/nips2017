@@ -35,9 +35,6 @@ _data_set_name_2_provider_name = \
     }
 
 
-# _link_template = 'https://drive.google.com/uc?export=download&id={}'
-
-
 def download_file_from_google_drive(id, destination):
     def get_confirm_token(response):
         for key, value in response.cookies.items():

@@ -29,8 +29,7 @@ if __name__ == '__main__':
 
         elif choice == "download_provider":
             download_provider("reddit_5K")
-        generate_dgm_provider(raw_data_path,
-                              provider_path)
+
     else:
         print('Found persistence diagram provider!')
 
