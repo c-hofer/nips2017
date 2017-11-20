@@ -17,7 +17,7 @@ if __name__ == '__main__':
     from src.sharedCode.gui import ask_user_for_provider_or_data_set_download
 
     provider_path = os.path.join(os.path.dirname(__file__), 'data/dgm_provider/reddit_5K.h5')
-    raw_data_path = os.path.join(os.path.dirname(__file__), 'data/raw_data/reddit_multi_5K.graph')
+    raw_data_path = os.path.join(os.path.dirname(__file__), 'data/raw_data/reddit_5K/reddit_multi_5K.graph')
 
     if not os.path.isfile(provider_path):
         choice = ask_user_for_provider_or_data_set_download()
