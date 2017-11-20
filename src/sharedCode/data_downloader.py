@@ -22,7 +22,7 @@ _data_set_name_2_provider_google_drive_id = \
         'animal': '0BxHF82gaPzgSSWIxNmJBRFJzcmM',
         'mpeg7': '0BxHF82gaPzgSU3lPWDNEVHhNR3M',
         'reddit_5K': '0BxHF82gaPzgSZDdFWDU3S29hdm8',
-        'reddit_12K': 'BxHF82gaPzgSd0d4WDNYVnN4dEU',
+        'reddit_12K': '0BxHF82gaPzgSd0d4WDNYVnN4dEU',
     }
 
 
