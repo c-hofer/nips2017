@@ -1,6 +1,6 @@
 # Deep Learning with Topological Signatures
 
-This repository *will* contain (after NIPS'17) code to reproduce the results of the following paper:
+This repository contains the code to reproduce the results of the following paper:
 
 ```bash
 @inproceedings{Hofer17c,
@@ -19,12 +19,13 @@ and [tda-toolkit](https://github.com/c-hofer/tda-toolkit).
 
 # Installation 
 
-1. Ensure ```PyTorch``` is installed properly. 
+1. Ensure ```PyTorch``` is installed properly. (During developement I used ```PyTorch``` 0.2)
 
 1. If you want to calculate the persistence diagrams yourself make sure the tda-toolkit submodule 
 is configured properly, see [tda-toolkit](https://github.com/c-hofer/tda-toolkit) for how to do this. 
 
-1. Clone the repo with the ```--recursive``` flag set (otherwise the submodules won't be cloned). 
+1. Clone the repo with the ```--recursive``` flag set (otherwise the submodules won't be cloned). If you want to 
+install the submodules manually you can omit the flag. 
 
 # Usage 
 
