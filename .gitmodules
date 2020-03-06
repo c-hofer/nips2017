@@ -1,8 +1,0 @@
-[submodule "chofer_torchex"]
-	path = chofer_torchex
-	url = https://github.com/c-hofer/chofer_torchex.git
-	branch = nips2017
-[submodule "tda-toolkit"]
-	path = tda-toolkit
-	url = https://github.com/c-hofer/tda-toolkit.git
-	branch = nips2017
